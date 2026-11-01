@@ -1,0 +1,12 @@
+timestamp,metric,host,interface,value,unit
+2026-01-05T07:00:00+07:00,net_rx_rate,router-1,ge-0/0/1,120.5,Mbit/s
+2026-01-05T00:01:00Z,net_rx_rate,router-1,ge-0/0/1,118.0,Mbit/s
+2026-01-05T00:00:00Z,net_rx_rate,router-1,ge-0/0/1,120.5,Mbit/s
+2026-01-05T00:03:00Z,net_rx_rate,router-1,ge-0/0/1,,Mbit/s
+2026-01-05T00:04:00Z,net_rx_rate,router-1,ge-0/0/1,ERR,Mbit/s
+2026-01-05T00:02:00Z,net_rx_rate,router-1,ge-0/0/2,15.0,Mbit/s
+2026-01-05T00:02:00Z,net_rx_rate,router-1,ge-0/0/2,16.0,Mbit/s
+2026-01-05T00:05:00Z,net_rx_rate,router-1,ge-0/0/1,119.0,Mbit/s
+not-a-time,net_rx_rate,router-1,ge-0/0/1,1.0,Mbit/s
+2026-01-05T00:01:30Z,net_rx_rate,router-2,ge-0/0/1,99.0,Mbit/s
+2026-01-05T00:00:30Z,net_rx_rate,router-2,ge-0/0/1,98.0,Mbit/s
