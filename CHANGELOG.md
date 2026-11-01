@@ -9,6 +9,13 @@ the public API; any such change is listed under *Changed* or *Removed*.
 
 ### Added
 
+- Continuous integration (GitHub Actions), brought forward from Milestone 6. `CONTRIBUTING.md`
+  describes how to protect `master` with it. The workflow runs:
+  - formatting, lint and type checks;
+  - tests on Python 3.11-3.14 with a 95% coverage floor;
+  - tests against the lowest supported numpy and pandas;
+  - a package build with a smoke test of the installed wheel;
+  - a single "All checks passed" status check that `master` requires.
 - Project foundation:
   - packaging with uv and `uv_build`, for Python 3.11+;
   - ruff, strict mypy and pytest configuration;

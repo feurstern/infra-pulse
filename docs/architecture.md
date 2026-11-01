@@ -239,8 +239,9 @@ the decision was taken, and its limits.
   - `pandas>=3.0`, because the code relies on its `str` dtype and Copy-on-Write.
   - Local development uses 3.12.
 - **Limits.**
-  - Lower bounds are declared but only the locked versions are tested. A lowest-versions CI job is
-    planned for M6.
+  - Only the declared lower bounds and the locked versions are tested, not the versions in
+    between. The CI `lowest` job installs the lower bounds (numpy 2.0.0 and pandas 3.0.0 on
+    Python 3.11); all tests passed with them on 2026-11-01.
   - Python 3.11 rules out 3.12-only syntax.
 
 ## Quality gate and tooling
@@ -252,6 +253,22 @@ the decision was taken, and its limits.
 | mypy | strict type checking of `src/` with `pandas-stubs` | `[tool.mypy]` |
 | pytest | tests. Warnings are errors, randomness is seeded, nothing uses the network | `[tool.pytest.ini_options]` |
 
-**CI plan (M6).** GitHub Actions will run `uv sync --locked`, the four checks above, on Python 3.11
-and the newest supported version, plus a lowest-direct-dependencies job. Documentation (mkdocs) and
-PyPI publishing also arrive in M6.
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request, on every push to `master`, and on demand. It
+was brought forward from Milestone 6 so that `master` can be protected now.
+
+| job | checks |
+|---|---|
+| Format, lint and type check | `uv sync --locked` (the lockfile must be current), `ruff format --check`, `ruff check`, `mypy` |
+| Tests (Python 3.11, 3.12, 3.13, 3.14) | the full suite with coverage; under 95% fails |
+| Tests (lowest supported numpy and pandas) | the suite on Python 3.11 with every direct dependency at its declared lower bound |
+| Build and smoke-test the package | `uv build` (sdist, then a wheel from it), then the example runs against the installed wheel |
+| All checks passed | succeeds only if every job above succeeded; this is the one required status check for `master` |
+
+Supply chain: the workflow has read-only permissions, and checkout does not keep the token. Every
+action is pinned to a full commit SHA, and the uv version is pinned. Updating them is a deliberate
+change.
+
+CI does not deliver anything yet: documentation publishing (mkdocs) and PyPI releases remain part of
+Milestone 6.

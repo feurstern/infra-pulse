@@ -41,7 +41,37 @@ uv run pytest
   the decision, the alternatives, the reasons and the limits.
 - **Claims.** Do not claim performance or detection quality without a reproducible measurement.
 
-## Pull requests
+## Pull requests and continuous integration
 
-Keep each pull request to one concern. Describe what changed, why, and how it was tested. Update
-`CHANGELOG.md` under *Unreleased*.
+Work on a branch and open a pull request into `master`. Keep each pull request to one concern.
+Describe what changed, why, and how it was tested, and update `CHANGELOG.md` under *Unreleased*.
+
+GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) checks every pull request:
+- formatting, lint and types;
+- the tests on Python 3.11-3.14 with at least 95% coverage;
+- the tests against the lowest supported numpy and pandas;
+- the package build.
+
+A pull request can only be merged when the **All checks passed** check is green.
+
+## Protecting `master` (maintainers)
+
+`master` is protected by a repository ruleset, not by anything in the code. To set it up, on GitHub
+open **Settings → Rules → Rulesets → New ruleset → New branch ruleset**:
+
+1. **Name** `protect master`. Set **Enforcement status** to *Active*. Leave the **bypass list**
+   empty, so the rules also apply to administrators.
+2. **Target branches:** *Add target → Include by pattern* `master`. If `master` is the default
+   branch, *Include default branch* also works.
+3. **Rules:**
+   - **Restrict deletions.**
+   - **Block force pushes.**
+   - **Require a pull request before merging.** With a single maintainer, set *Required approvals*
+     to 0, because GitHub does not let you approve your own pull request.
+   - **Require status checks to pass.** Add **All checks passed** (source *GitHub Actions*). The
+     check can only be selected after the workflow has run once, for example on the first pull
+     request. Optionally tick *Require branches to be up to date before merging*.
+4. **Create.**
+
+From then on, every change reaches `master` through a pull request whose checks have passed, and no
+one can force-push to it or delete it.

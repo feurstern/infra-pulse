@@ -1,5 +1,7 @@
 # InfraPulse
 
+[![CI](https://github.com/feurstern/infra-pulse/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/feurstern/infra-pulse/actions/workflows/ci.yml)
+
 CPU-first, explainable anomaly detection for infrastructure metrics, as a Python library.
 
 InfraPulse is meant to sit *next to* the monitoring you already run (Prometheus, Grafana, Beszel,
@@ -23,13 +25,13 @@ and by how much. It never claims a failure or a root cause.
 
 | Milestone | Scope | State |
 |---|---|---|
-| 0 | Repository foundation, tooling, architecture | done |
+| 0 | Repository foundation, tooling, architecture, CI | done |
 | 1 | Data model, validation, timestamp normalization, resampling | **done** |
 | 2 | First detectors (MAD, EWMA) and the detector interface | planned |
 | 3 | Normalized anomaly results, severity, evidence-based explanations | planned |
 | 4 | Evaluation: precision/recall, false alerts per day, detection delay | planned |
 | 5 | Rolling baselines, Isolation Forest, seasonal baselines | planned |
-| 6 | Prometheus adapter, CI, documentation site, first release candidate | planned |
+| 6 | Prometheus adapter, documentation site, first release candidate | planned |
 
 There are no anomaly detectors yet. The library currently validates and prepares data for them.
 
@@ -119,8 +121,10 @@ uv run mypy                  # strict type check of src/
 uv run pytest                # tests (warnings are errors)
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions and [CHANGELOG.md](CHANGELOG.md) for
-changes.
+GitHub Actions runs the same checks on every pull request. They also cover Python 3.11-3.14, the
+lowest supported numpy and pandas, and the package build, and they must pass before anything is
+merged into `master`. See [CONTRIBUTING.md](CONTRIBUTING.md) for conventions and branch
+protection, and [CHANGELOG.md](CHANGELOG.md) for changes.
 
 ## Licence and author
 

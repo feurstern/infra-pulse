@@ -1,0 +1,135 @@
+# Quality gate for every pull request and every push to master.
+#
+# The "All checks passed" job succeeds only when every other job succeeds. Make it the required
+# status check of the master branch ruleset (see CONTRIBUTING.md) so that nothing can be merged
+# into master unless formatting, lint, types, tests on every supported Python, tests against the
+# lowest supported dependencies and the package build all pass.
+#
+# Actions are pinned to full commit SHAs (the tag is in the comment) so a moved tag cannot change
+# what runs here.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  UV_VERSION: "0.12.10"
+
+jobs:
+  lint:
+    name: Format, lint and type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+      - name: Install from the lockfile
+        run: uv sync --locked
+      - name: Formatting
+        run: uv run --locked ruff format --check .
+      - name: Lint
+        run: uv run --locked ruff check --output-format=github .
+      - name: Types
+        run: uv run --locked mypy
+
+  test:
+    name: Tests (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Install from the lockfile
+        run: uv sync --locked
+      - name: Tests with coverage
+        run: uv run --locked pytest --cov=infrapulse --cov-report=term-missing
+
+  lowest:
+    name: Tests (lowest supported numpy and pandas)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Re-resolve direct dependencies to the lower bounds declared in pyproject.toml. The
+      # lockfile is rewritten only inside this runner, never committed.
+      UV_RESOLUTION: lowest-direct
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: "3.11"
+          enable-cache: true
+      - name: Install the lowest allowed versions
+        run: uv sync
+      - name: Show the versions under test
+        run: uv run python -c "import sys, numpy, pandas; print(sys.version, numpy.__version__, pandas.__version__)"
+      - name: Tests
+        run: uv run pytest
+
+  build:
+    name: Build and smoke-test the package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: "3.12"
+          enable-cache: true
+      - name: Build the sdist and wheel
+        run: uv build
+      - name: Run the example against the installed wheel, not the source tree
+        run: uv run --isolated --no-project --with dist/*.whl python examples/quickstart.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  passed:
+    name: All checks passed
+    if: always()
+    needs: [lint, test, lowest, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every job to have succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = "success" ] || exit 1
+          done
